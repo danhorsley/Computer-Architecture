@@ -9,6 +9,7 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.reg = [0] * 8
+        self.reg[7] = 0xF4
         self.pc = 0
         self.MAR = 0
         self.MDR = 0
@@ -122,9 +123,7 @@ class CPU:
             self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
             self.pc += ir >> 6
         elif ir == 0b00000000:
-            pass
-        elif ir == 0b01000110:
-            #TODO POP
+            #NOP
             pass
         elif ir == 0b01010000:
             #TODO CALL
@@ -166,8 +165,15 @@ class CPU:
             #TODO PRN
             pass
         elif ir == 0b01000101:
-            #TODO PUSH
-            pass
+            #PUSH
+            self.reg[7] -=1
+            self.ram[self.reg[7]] = operand_a
+
+        elif ir == 0b01000110:
+            #POP
+            self.reg[operand_a] = self.ram[self.reg[7]]
+            self.reg[7] +=1
+
         elif ir == 0b00010001:
             #TODO RET
             pass
