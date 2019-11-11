@@ -12,7 +12,7 @@ class CPU:
         self.pc = 0
         self.MAR = 0
         self.MDR = 0
-        self.FL = [False] * 8
+        self.FL = 0b00000000
 
     def load(self):
         """Load a program into memory."""
@@ -58,12 +58,24 @@ class CPU:
             self.reg[reg_a] = self.reg[reg_b]
         elif op == "SHL": 
             self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
+        elif op == "CMP": 
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.FL = 0b00000001
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.FL = 0b00000010
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.FL = 0b00000100
+
         elif op == "SHR": 
             self.reg[reg_a] = self.reg[reg_a] >> self.reg[reg_b]
         elif op == "XOR": 
             self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_a]
         elif op == "OR": 
             self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_a]
+        elif op == "NOT": 
+            self.reg[reg_a] = ~self.reg[reg_a]
+        elif op == "AND": 
+            self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_a]
         elif op == "DIV": 
             if self.reg[reg_b]!=0:
                 self.reg[reg_a] = self.reg[reg_a]/self.reg[reg_b]
@@ -101,11 +113,65 @@ class CPU:
     def run(self):
         """Run the CPU."""
         opp_dict = {0b0000:'ADD', 0b0001:'SUB', 0b0101:'INC', 0b0110:'DEC', 0b0010:'MUL', 0b0011:'DIV',
-                     0b1011:'XOR', 0b0100:'ST', 0b1010:'OR',0b1100:'SHL', 0b1101:'SHR'}
+                     0b1011:'XOR', 0b0100:'ST', 0b1010:'OR',0b1100:'SHL', 0b1101:'SHR',0b1000 : 'AND',
+                     0b0111 :'CMP',0b1001:'NOT'}
         ir = self.ram_read(self.pc)
         operand_a = self.ram_read(self.pc+1)
         operand_b = self.ram_read(self.pc+2)
         if ((ir >>5 ) % (ir >>6)) == 0b1 :  ## USE ALU
-            self.alu(opp_dict[ir[4:]],operand_a,operand_b)
-        if str(ir)[2]=='0':
+            self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
+            self.pc += ir >> 6
+        elif ir == 0b00000000:
+            pass
+        elif ir == 0b01000110:
+            #TODO POP
+            pass
+        elif ir == 0b01010000:
+            #TODO CALL
+            pass
+        elif ir == 0b00000001:
+            #TODO HLT
+            pass
+        elif ir == 0b000010011: 
+            #TODO IRET
+            pass
+        elif ir ==0b01010101:
+            #TODO JEQ
+            pass
+        elif ir ==0b01011010:
+            #TODO JGE
+            pass
+        elif ir == 0b01011001:
+            #TODO JLE
+            pass
+        elif ir == 0b01011000:
+            #TODO JLT
+            pass
+        elif ir == 0b01010100:
+            #TODO JMP
+            pass
+        elif ir == 0b01010110:
+            #TODO JNE
+            pass
+        elif ir == 0b10000011:
+            #TODO LD
+            pass
+        elif ir == 0b10000010:
+            #TODO LDI
+            pass
+        elif ir == 0b01001000:
+            #TODO PRA
+            pass
+        elif ir == 0b01000111:
+            #TODO PRN
+            pass
+        elif ir == 0b01000101:
+            #TODO PUSH
+            pass
+        elif ir == 0b00010001:
+            #TODO RET
+            pass
+        
+        
+
 
