@@ -144,20 +144,21 @@ class CPU:
             #TODO JLE
             pass
         elif ir == 0b01011000:
-            #TODO JLT
+            if ((self.FL>> )% (self.FL >>5)):
             pass
         elif ir == 0b01010100:
-            #TODO JMP
-            pass
+            #JMP
+            self.pc = reg[operand_a]
         elif ir == 0b01010110:
-            #TODO JNE
-            pass
+            #JNE
+            if self.FL >> 7 ==0:
+                self.pc = reg[operand_a]
         elif ir == 0b10000011:
             #TODO LD
             pass
         elif ir == 0b10000010:
-            #TODO LDI
-            pass
+            self.reg[operand_b] = self.reg[operand_b]
+            self.pc+=3
         elif ir == 0b01001000:
             print(ord(self.reg[operand_a]))
             self.pc +=2
