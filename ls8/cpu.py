@@ -41,8 +41,34 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "INC":
+            self.reg[reg_a] += 1
+        elif op == "DEC":
+            self.reg[reg_a] -= 1
         elif op == "SUB": 
             self.reg[reg_a] = self.reg[reg_a]-self.reg[reg_b]
+        elif op == "MUL": 
+            self.reg[reg_a] = self.reg[reg_a]*self.reg[reg_b]
+        elif op == "ST": 
+            self.reg[reg_a] = *self.reg[reg_b]
+        elif op == "XOR": 
+            my_str = ''
+            for i in range(len(reg_a)):
+                _ = str((reg_a[i]+reg_b[i])%2)
+                my_str += _
+        elif op == "OR": 
+            my_str = ''
+            for i in range(len(reg_a)):
+                if (int(reg_a[i])+int(reg_b[i]))>0:
+                    my_str += '1'
+                else:
+                    my_str += '0'
+
+        elif op == "DIV": 
+            if self.reg[reg_b]!=0:
+                self.reg[reg_a] = self.reg[reg_a]/self.reg[reg_b]
+            else:
+                raise Exception("can't divide by zero")
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -74,10 +100,12 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        opp_dict['0000':'ADD','0001':'SUB']
+        opp_dict = {'0000':'ADD','0001':'SUB','0101':'INC','0110':'DEC','0010':'MUL','0011':'DIV',
+                    '1011':'XOR','0100':'ST','1010':'OR'}
         ir = str(self.ram_read(self.pc))
         operand_a = self.ram_read(self.pc+1)
         operand_b = self.ram_read(self.pc+2)
-        if str(ir)[2]==1:
+        if str(ir)[2]=='1':  ## USE ALU
             self.alu(opp_dict[ir[4:]],operand_a,operand_b)
+        if str(ir)[2]=='0'
 
