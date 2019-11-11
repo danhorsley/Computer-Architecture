@@ -159,24 +159,27 @@ class CPU:
             #TODO LDI
             pass
         elif ir == 0b01001000:
-            #TODO PRA
-            pass
+            print(ord(self.reg[operand_a]))
+            self.pc +=2
         elif ir == 0b01000111:
-            #TODO PRN
-            pass
+            print(self.reg[operand_a])
+            self.pc +=2
         elif ir == 0b01000101:
             #PUSH
             self.reg[7] -=1
-            self.ram[self.reg[7]] = operand_a
+            self.ram[self.reg[7]] = self.reg[operand_a]
+            self.pc +=2
 
         elif ir == 0b01000110:
             #POP
             self.reg[operand_a] = self.ram[self.reg[7]]
             self.reg[7] +=1
+            self.pc +=2
 
         elif ir == 0b00010001:
-            #TODO RET
-            pass
+            self.pc = self.ram[self.reg[7]]
+            self.reg[7] += 1
+
         
         
 
