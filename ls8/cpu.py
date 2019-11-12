@@ -1,6 +1,8 @@
 """CPU functionality."""
 
 import sys
+import os
+script_dir = os.path.dirname(__file__)
 
 class CPU:
     """Main CPU class."""
@@ -15,22 +17,23 @@ class CPU:
         self.MDR = 0
         self.FL = 0b00000000
 
-    def load(self):
+    def load(self,to_load='examples\mult.ls8'):
         """Load a program into memory."""
 
         address = 0
-
+        with open(os.path.join(script_dir, to_load)) as f:
+            program = f.readlines()
+            program = [int(x[:8],2) for x in program] 
         # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
         for instruction in program:
             self.ram[address] = instruction
@@ -120,9 +123,9 @@ class CPU:
             ir = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc+1)
             operand_b = self.ram_read(self.pc+2)
-            #print('ir',ir,'a',operand_a,'b',operand_b)
+            print('pc',self.pc,'ir',ir,'a',operand_a,'b',operand_b)
             if ((ir >>5 ) % 0b10) == 0b1 :  ## USE ALU
-                self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
+                self.alu(opp_dict[ir % (ir>>4)],operand_a,operand_b)
                 self.pc += ir >> 6
             elif ir == 0b00000000:
                 #NOP
@@ -199,6 +202,7 @@ class CPU:
                 # LD
                 self.reg[operand_a] = self.reg[operand_b]
             elif ir == 0b10000010:
+                #print('LDI trigger')
                 #LDI - sets value of register qual to integer
                 self.reg[operand_a] = operand_b
                 self.pc+=3
