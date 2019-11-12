@@ -113,73 +113,116 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        opp_dict = {0b0000:'ADD', 0b0001:'SUB', 0b0101:'INC', 0b0110:'DEC', 0b0010:'MUL', 0b0011:'DIV',
-                     0b1011:'XOR', 0b0100:'ST', 0b1010:'OR',0b1100:'SHL', 0b1101:'SHR',0b1000 : 'AND',
-                     0b0111 :'CMP',0b1001:'NOT'}
-        ir = self.ram_read(self.pc)
-        operand_a = self.ram_read(self.pc+1)
-        operand_b = self.ram_read(self.pc+2)
-        if ((ir >>5 ) % (ir >>6)) == 0b1 :  ## USE ALU
-            self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
-            self.pc += ir >> 6
-        elif ir == 0b00000000:
-            #NOP
-            pass
-        elif ir == 0b01010000:
-            #TODO CALL
-            pass
-        elif ir == 0b00000001:
-            #TODO HLT
-            pass
-        elif ir == 0b000010011: 
-            #TODO IRET
-            pass
-        elif ir ==0b01010101:
-            #TODO JEQ
-            pass
-        elif ir ==0b01011010:
-            #TODO JGE
-            pass
-        elif ir == 0b01011001:
-            #TODO JLE
-            pass
-        elif ir == 0b01011000:
-            if ((self.FL>> )% (self.FL >>5)):
-            pass
-        elif ir == 0b01010100:
-            #JMP
-            self.pc = reg[operand_a]
-        elif ir == 0b01010110:
-            #JNE
-            if self.FL >> 7 ==0:
+        while self.pc!='HALT':
+            opp_dict = {0b0000:'ADD', 0b0001:'SUB', 0b0101:'INC', 0b0110:'DEC', 0b0010:'MUL', 0b0011:'DIV',
+                        0b1011:'XOR', 0b0100:'ST', 0b1010:'OR',0b1100:'SHL', 0b1101:'SHR',0b1000 : 'AND',
+                        0b0111 :'CMP',0b1001:'NOT'}
+            ir = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc+1)
+            operand_b = self.ram_read(self.pc+2)
+            if ((ir >>5 ) % 0b10) == 0b1 :  ## USE ALU
+                self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
+                self.pc += ir >> 6
+            elif ir == 0b00000000:
+                #NOP
+                pass
+            elif ir == 0b01010000:
+                # CALL
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.reg[self.pc+2]
+                self.pc = self.reg[operand_a]
+                pass
+            elif ir == 0b00000001:
+                # HLT
+                self.pc = 'HALT'
+            elif ir == 0b01010010:
+                
+                # INT
+                #set nth bit of IS register to given register
+                self.reg[6]= 0b1 << self.reg[operand_a] 
+                #first IM & IS register bitwise &ed and stored in masked interrupts
+                self.reg[5] = (self.reg[5] & self.reg[6])
+                i=0
+                while (self.reg[5] << i) % 0b10 == 0b1:
+                    i=i+1
+                self.reg[6]=0b00000000
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.pc
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.FL
+                for j in range(7):
+                    self.reg[7]-=1
+                    self.ram[self.reg[7]] = self.reg[j]
+                # address (vector) of the appr handler looked up from the interrupt vector table.
+                self.pc = self.ram[0xF8+i]
+
+
+
+            elif ir == 0b000010011: 
+                # IRET
+                #R6 to #R0 popped off stack
+                for i in range(7):
+                    self.reg[6-i] = self.ram[self.reg[7]]
+                    self.reg[7]+=1
+                #FL register popped off stack
+                self.FL = self.ram[self.reg[7]]
+                self.reg[7] +=1
+                self.pc = self.ram[self.reg[7]]
+                self.reg[7] +=1
+
+
+            elif ir ==0b01010101:
+                #TODO JEQ
+                pass
+            elif ir ==0b01011010:
+                #TODO JGE
+                pass
+            elif ir == 0b01011001:
+                #TODO JLE
+                pass
+            elif ir == 0b01011000:
+                if ((self.FL>> )% (self.FL >>5)):
+                pass
+            elif ir == 0b01010100:
+                #JMP
                 self.pc = reg[operand_a]
-        elif ir == 0b10000011:
-            #TODO LD
-            pass
-        elif ir == 0b10000010:
-            self.reg[operand_b] = self.reg[operand_b]
-            self.pc+=3
-        elif ir == 0b01001000:
-            print(ord(self.reg[operand_a]))
-            self.pc +=2
-        elif ir == 0b01000111:
-            print(self.reg[operand_a])
-            self.pc +=2
-        elif ir == 0b01000101:
-            #PUSH
-            self.reg[7] -=1
-            self.ram[self.reg[7]] = self.reg[operand_a]
-            self.pc +=2
+            elif ir == 0b01010110:
+                #JNE
+                if self.FL >> 7 ==0:
+                    self.pc = reg[operand_a]
+            elif ir == 0b10000011:
+                #TODO LD
+                pass
+            elif ir == 0b10000010:
+                #LDI
+                self.reg[operand_b] = self.reg[operand_b]
+                self.pc+=3
+            elif ir == 0b01001000:
+                #PRA
+                print(ord(self.reg[operand_a]))
+                self.pc +=2
+            elif ir == 0b01000111:
+                #PRN
+                print(self.reg[operand_a])
+                self.pc +=2
+            elif ir == 0b01000101:
+                #PUSH
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.reg[operand_a]
+                self.pc +=2
 
-        elif ir == 0b01000110:
-            #POP
-            self.reg[operand_a] = self.ram[self.reg[7]]
-            self.reg[7] +=1
-            self.pc +=2
+            elif ir == 0b01000110:
+                #POP
+                self.reg[operand_a] = self.ram[self.reg[7]]
+                self.reg[7] +=1
+                self.pc +=2
 
-        elif ir == 0b00010001:
-            self.pc = self.ram[self.reg[7]]
-            self.reg[7] += 1
+            elif ir == 0b00010001:
+                self.pc = self.ram[self.reg[7]]
+                self.reg[7] += 1
+
+        
+        exit()
 
         
         
