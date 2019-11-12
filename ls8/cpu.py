@@ -16,6 +16,7 @@ class CPU:
         self.MAR = 0
         self.MDR = 0
         self.FL = 0b00000000
+        self.errorcode = 0
 
     def load(self,to_load='examples\mult.ls8'):
         """Load a program into memory."""
@@ -23,7 +24,13 @@ class CPU:
         address = 0
         with open(os.path.join(script_dir, to_load)) as f:
             program = f.readlines()
+            program = [x for x in program if x[0]!='#']
             program = [int(x[:8],2) for x in program] 
+            # for k in range(len(program)):
+            #     if program[k][0]=='#':
+            #         pass
+            #     else:
+            #         program[k]=int(program[k][:8],2)
         # For now, we've just hardcoded a program:
         # program = [
         #     # From print8.ls8
@@ -123,17 +130,22 @@ class CPU:
             ir = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc+1)
             operand_b = self.ram_read(self.pc+2)
+            if self.errorcode == f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}':
+                self.pc='HALT'
             print('pc',self.pc,'ir',ir,'a',operand_a,'b',operand_b)
-            if ((ir >>5 ) % 0b10) == 0b1 :  ## USE ALU
+            self.errorcode = f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}'
+            if ((ir >>5 ) % 0b10) == 0b1 :
+                #print('ALU trigger')  ## USE ALU
                 self.alu(opp_dict[ir % (ir>>4)],operand_a,operand_b)
-                self.pc += ir >> 6
+                self.pc += (ir >> 6) + 1
             elif ir == 0b00000000:
                 #NOP
                 pass
             elif ir == 0b01010000:
-                # CALL
+                # CALL - first push address of next instruction onto stack
                 self.reg[7] -=1
-                self.ram[self.reg[7]] = self.reg[self.pc+2]
+                self.ram[self.reg[7]] = self.pc+2
+                #then set pc equal to call address
                 self.pc = self.reg[operand_a]
                 pass
             elif ir == 0b00000001:
