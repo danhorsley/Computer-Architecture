@@ -172,27 +172,31 @@ class CPU:
 
 
             elif ir ==0b01010101:
-                #TODO JEQ
-                pass
+                # JEQ
+                if self.FL % 0b10 == 0b1:
+                    self.pc = self.reg[operand_a]
             elif ir ==0b01011010:
-                #TODO JGE
-                pass
+                # JGE
+                if self.FL % 0b10==0b1 or (sl.FL >> 1)%0b10==0b1:
+                    self.pc = self.reg[operand_a]
             elif ir == 0b01011001:
-                #TODO JLE
-                pass
+                #JLE
+                if self.FL % 0b10==0b1 or (sl.FL >> 2)%0b10==0b1:
+                    self.pc = self.reg[operand_a]
             elif ir == 0b01011000:
-                if ((self.FL>> )% (self.FL >>5)):
-                pass
+                #JLT
+                if (sl.FL >> 2)%0b10==0b1:
+                    self.pc = self.reg[operand_a]
             elif ir == 0b01010100:
                 #JMP
                 self.pc = reg[operand_a]
             elif ir == 0b01010110:
                 #JNE
-                if self.FL >> 7 ==0:
+                if self.FL % 0b10==0b0:
                     self.pc = reg[operand_a]
             elif ir == 0b10000011:
-                #TODO LD
-                pass
+                # LD
+                self.reg[operand_a] = self.reg[operand_b]
             elif ir == 0b10000010:
                 #LDI
                 self.reg[operand_b] = self.reg[operand_b]
