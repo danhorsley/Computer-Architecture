@@ -120,6 +120,7 @@ class CPU:
             ir = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc+1)
             operand_b = self.ram_read(self.pc+2)
+            #print('ir',ir,'a',operand_a,'b',operand_b)
             if ((ir >>5 ) % 0b10) == 0b1 :  ## USE ALU
                 self.alu(opp_dict[ir % (ir<<4)],operand_a,operand_b)
                 self.pc += ir >> 6
@@ -198,8 +199,8 @@ class CPU:
                 # LD
                 self.reg[operand_a] = self.reg[operand_b]
             elif ir == 0b10000010:
-                #LDI
-                self.reg[operand_b] = self.reg[operand_b]
+                #LDI - sets value of register qual to integer
+                self.reg[operand_a] = operand_b
                 self.pc+=3
             elif ir == 0b01001000:
                 #PRA
