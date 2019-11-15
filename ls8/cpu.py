@@ -125,7 +125,7 @@ class CPU:
     def run(self):
         """Run the CPU."""
         while self.pc!='HALT':
-            time.sleep(0.5)
+            time.sleep(0.2)
             if not self.stopmoreinterrupts:
                 if msvcrt.kbhit():
                     self.ram[0xF4] = ord(msvcrt.getch())
