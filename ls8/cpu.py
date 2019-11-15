@@ -3,6 +3,7 @@
 import sys
 import os
 import datetime
+import msvcrt, time
 script_dir = os.path.dirname(__file__)
 
 class CPU:
@@ -20,6 +21,7 @@ class CPU:
         self.errorcode = 0
         self.stopmoreinterrupts = False
         self.then = datetime.datetime.today()
+       
 
     def load(self,to_load='examples\mult.ls8'):
         """Load a program into memory."""
@@ -123,15 +125,23 @@ class CPU:
     def run(self):
         """Run the CPU."""
         while self.pc!='HALT':
+            time.sleep(0.5)
+            if not self.stopmoreinterrupts:
+                if msvcrt.kbhit():
+                    self.ram[0xF4] = ord(msvcrt.getch())
+                    print('key trigger',chr(self.ram[0xF4]),'**********',self.ram[0xF4])
+                    self.reg[6] = 0b00000010
+                    self.stopmoreinterrupts = True
             #check timer
-            now = datetime.datetime.today()
-            if (now - self.then).seconds > 0:
-                #print('timer interrupt trigger')
-                self.then = now
-                #print('A')
-                self.reg[6] = 0b00000001
-            else:
-                self.reg[6] = 0b00000000
+            if not self.stopmoreinterrupts:
+                now = datetime.datetime.today()
+                if (now - self.then).seconds > 0:
+                    #print('timer interrupt trigger')
+                    self.then = now
+                    #print('A')
+                    self.reg[6] = 0b00000001
+                else:
+                    self.reg[6] = 0b00000000
             #interrupt handle
             #first IM & IS register bitwise &ed and stored in masked interrupts 
             maskedInterrupts = (self.reg[5] & self.reg[6])
@@ -161,7 +171,7 @@ class CPU:
             operand_b = self.ram_read(self.pc+2)
             if self.errorcode == f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}':
                 self.pc='HALT'
-            #print('flag',bin(self.FL),'pc',self.pc,'ir',bin(ir),'a',operand_a,'b',operand_b,bin(self.reg[operand_a]))
+            print('flag',bin(self.FL),'pc',self.pc,'ir',bin(ir),'a',operand_a,'b',operand_b,bin(self.reg[operand_a]))
             self.errorcode = f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}'
             if ((ir >>5 ) % 0b10) == 0b1 :
                 #print('ALU trigger')  ## USE ALU
@@ -185,9 +195,6 @@ class CPU:
                 # INT
                 #set nth bit of IS register to given register
                 self.reg[6]= 0b1 << self.reg[operand_a] 
-                
-
-
 
             elif ir == 0b000010011: 
                 # IRET
@@ -238,7 +245,9 @@ class CPU:
                     self.pc+=2
             elif ir == 0b10000011:
                 # LD
-                self.reg[operand_a] = self.reg[operand_b]
+                #print(operand_b,self.ram[operand_b],'****LD check')
+                self.reg[operand_a] = self.ram[self.reg[operand_b]]
+                self.pc+=3
             elif ir == 0b10000010:
                 #print('LDI trigger')
                 #LDI - sets value of register qual to integer
@@ -246,6 +255,7 @@ class CPU:
                 self.pc+=3
             elif ir == 0b01001000:
                 #PRA
+                #print('PRA check',self.reg[operand_a])
                 print(chr(self.reg[operand_a]))
                 self.pc +=2
             elif ir == 0b01000111:

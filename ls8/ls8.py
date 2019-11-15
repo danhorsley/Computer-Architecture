@@ -7,5 +7,5 @@ from cpu import *
 
 cpu = CPU()
 
-cpu.load('examples\interrupts.ls8')
+cpu.load('examples\keyboard.ls8')
 cpu.run()
