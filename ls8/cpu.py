@@ -132,7 +132,7 @@ class CPU:
             operand_b = self.ram_read(self.pc+2)
             if self.errorcode == f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}':
                 self.pc='HALT'
-            print('pc',self.pc,'ir',ir,'a',operand_a,'b',operand_b)
+            print('flag',bin(self.FL),'pc',self.pc,'ir',ir,'a',operand_a,'b',operand_b)
             self.errorcode = f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}'
             if ((ir >>5 ) % 0b10) == 0b1 :
                 #print('ALU trigger')  ## USE ALU
@@ -191,25 +191,35 @@ class CPU:
                 # JEQ
                 if self.FL % 0b10 == 0b1:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc+=2
             elif ir ==0b01011010:
                 # JGE
                 if self.FL % 0b10==0b1 or (sl.FL >> 1)%0b10==0b1:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc+=2
             elif ir == 0b01011001:
                 #JLE
                 if self.FL % 0b10==0b1 or (sl.FL >> 2)%0b10==0b1:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc+=2
             elif ir == 0b01011000:
                 #JLT
                 if (sl.FL >> 2)%0b10==0b1:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc+=2
             elif ir == 0b01010100:
                 #JMP
-                self.pc = reg[operand_a]
+                self.pc = self.reg[operand_a]
             elif ir == 0b01010110:
                 #JNE
                 if self.FL % 0b10==0b0:
-                    self.pc = reg[operand_a]
+                    self.pc = self.reg[operand_a]
+                else:
+                    self.pc+=2
             elif ir == 0b10000011:
                 # LD
                 self.reg[operand_a] = self.reg[operand_b]
