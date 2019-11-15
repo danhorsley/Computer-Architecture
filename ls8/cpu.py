@@ -2,6 +2,7 @@
 
 import sys
 import os
+import datetime
 script_dir = os.path.dirname(__file__)
 
 class CPU:
@@ -17,6 +18,8 @@ class CPU:
         self.MDR = 0
         self.FL = 0b00000000
         self.errorcode = 0
+        self.stopmoreinterrupts = False
+        self.then = datetime.datetime.today()
 
     def load(self,to_load='examples\mult.ls8'):
         """Load a program into memory."""
@@ -26,11 +29,7 @@ class CPU:
             program = f.readlines()
             program = [x for x in program if x[0]!='#']
             program = [int(x[:8],2) for x in program] 
-            # for k in range(len(program)):
-            #     if program[k][0]=='#':
-            #         pass
-            #     else:
-            #         program[k]=int(program[k][:8],2)
+
         # For now, we've just hardcoded a program:
         # program = [
         #     # From print8.ls8
@@ -65,8 +64,8 @@ class CPU:
                 self.reg[reg_a] = self.reg[reg_a]%self.reg[reg_b]
             else:
                 raise Exception("can't divide by zero")
-        elif op == "ST": 
-            self.reg[reg_a] = self.reg[reg_b]
+        # elif op == "ST": 
+        #     self.reg[reg_a] = self.reg[reg_b]
         elif op == "SHL": 
             self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
         elif op == "CMP": 
@@ -124,6 +123,36 @@ class CPU:
     def run(self):
         """Run the CPU."""
         while self.pc!='HALT':
+            #check timer
+            now = datetime.datetime.today()
+            if (now - self.then).seconds > 0:
+                #print('timer interrupt trigger')
+                self.then = now
+                #print('A')
+                self.reg[6] = 0b00000001
+            else:
+                self.reg[6] = 0b00000000
+            #interrupt handle
+            #first IM & IS register bitwise &ed and stored in masked interrupts 
+            maskedInterrupts = (self.reg[5] & self.reg[6])
+            #print(bin(maskedInterrupts),'mi',bin(self.reg[5]),'5',bin(self.reg[6]),'6')
+            i=0
+            while (maskedInterrupts >> i) % 0b10 != 0b1 and i<8:
+                i=i+1
+            if i<8:  #if triggered
+                #print('*************************interrupt triggered')
+                self.stopmoreinterrupts = True
+                self.reg[6]=0b00000000
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.pc
+                self.reg[7] -=1
+                self.ram[self.reg[7]] = self.FL
+                for j in range(7):
+                    self.reg[7]-=1
+                    self.ram[self.reg[7]] = self.reg[j]
+                # address (vector) of the appr handler looked up from the interrupt vector table.
+                self.pc = self.ram[0xF8+i]
+            #mainloop
             opp_dict = {0b0000:'ADD', 0b0001:'SUB', 0b0101:'INC', 0b0110:'DEC', 0b0010:'MUL', 0b0011:'DIV',
                         0b1011:'XOR', 0b0100:'ST', 0b1010:'OR',0b1100:'SHL', 0b1101:'SHR',0b1000 : 'AND',
                         0b0111 :'CMP',0b1001:'NOT'}
@@ -132,7 +161,7 @@ class CPU:
             operand_b = self.ram_read(self.pc+2)
             if self.errorcode == f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}':
                 self.pc='HALT'
-            print('flag',bin(self.FL),'pc',self.pc,'ir',ir,'a',operand_a,'b',operand_b)
+            #print('flag',bin(self.FL),'pc',self.pc,'ir',bin(ir),'a',operand_a,'b',operand_b,bin(self.reg[operand_a]))
             self.errorcode = f'pc{self.pc}ir{ir}a{operand_a}b{operand_b}'
             if ((ir >>5 ) % 0b10) == 0b1 :
                 #print('ALU trigger')  ## USE ALU
@@ -156,21 +185,7 @@ class CPU:
                 # INT
                 #set nth bit of IS register to given register
                 self.reg[6]= 0b1 << self.reg[operand_a] 
-                #first IM & IS register bitwise &ed and stored in masked interrupts
-                self.reg[5] = (self.reg[5] & self.reg[6])
-                i=0
-                while (self.reg[5] << i) % 0b10 == 0b1:
-                    i=i+1
-                self.reg[6]=0b00000000
-                self.reg[7] -=1
-                self.ram[self.reg[7]] = self.pc
-                self.reg[7] -=1
-                self.ram[self.reg[7]] = self.FL
-                for j in range(7):
-                    self.reg[7]-=1
-                    self.ram[self.reg[7]] = self.reg[j]
-                # address (vector) of the appr handler looked up from the interrupt vector table.
-                self.pc = self.ram[0xF8+i]
+                
 
 
 
@@ -185,6 +200,7 @@ class CPU:
                 self.reg[7] +=1
                 self.pc = self.ram[self.reg[7]]
                 self.reg[7] +=1
+                self.stopmoreinterrupts = False
 
 
             elif ir ==0b01010101:
@@ -230,7 +246,7 @@ class CPU:
                 self.pc+=3
             elif ir == 0b01001000:
                 #PRA
-                print(ord(self.reg[operand_a]))
+                print(chr(self.reg[operand_a]))
                 self.pc +=2
             elif ir == 0b01000111:
                 #PRN
@@ -249,10 +265,20 @@ class CPU:
                 self.pc +=2
 
             elif ir == 0b00010001:
+                #RET
                 self.pc = self.ram[self.reg[7]]
                 self.reg[7] += 1
 
-        
+            elif ir == 0b10000100:
+                #ST
+                self.ram[self.reg[operand_a]] = self.reg[operand_b]
+                self.pc +=3
+
+            #elif ir == 0b10000100:
+                
+                # timer interrupt
+            
+            #print('loop done')    
         exit()
 
         
